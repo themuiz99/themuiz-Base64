@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TheMuiz Base64</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Sarabun:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', 'Sarabun', sans-serif; 
+            height: 100vh; 
+            margin: 0; 
+            background: #000; 
+            color: white; 
+            overflow: hidden; 
+        }
+
+        .full-screen-app {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: radial-gradient(circle at center, #111827 0%, #000 100%);
+        }
+
+        .content-card {
+            background-color: #1f2937;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            width: 100%;
+            max-width: 52rem;
+            height: 90vh; 
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #374151;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .card-body {
+            padding: 1rem 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow: hidden; 
+        }
+
+        .card-footer {
+            padding: 0.75rem;
+            text-align: center;
+            border-top: 1px solid #374151;
+            flex-shrink: 0;
+        }
+
+        .scrollable-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden; /* ล็อคไม่ให้ล้นแนวนอน */
+            word-break: break-all; /* บังคับตัดบรรทัดเมื่อข้อความยาวเกิน */
+            background-color: #111827;
+            border-radius: 0.75rem;
+            border: 1px solid #374151;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+
+        .fixed-input-area {
+            height: 35%;
+            min-height: 100px;
+        }
+
+        .fixed-output-area {
+            height: 45%;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .image-preview-container {
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        .copy-active {
+            transition: all 0.2s;
+            background-color: #065f46 !important;
+            transform: scale(0.99);
+        }
+    </style>
+</head>
+<body>
+    <div class="full-screen-app">
+        <div class="content-card">
+            <!-- Header -->
+            <div class="card-header">
+                <h1 class="text-3xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400">
+                    TheMuiz Base64 🚀
+                </h1>
+            </div>
+
+            <!-- Body -->
+            <div class="card-body">
+                <!-- Section 1: Input -->
+                <div class="fixed-input-area flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-bold text-blue-300">กรอกข้อความ</h2>
+                        <div class="flex items-center gap-2">
+                            <span id="charCountInput" class="text-[10px] text-gray-500 font-mono">0 ตัว</span>
+                            <button onclick="clearAll()" class="p-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-md transition-colors" title="ล้าง">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5 v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="universalInput" 
+                        class="scrollable-box w-full p-3 bg-gray-900 border-gray-700 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+                        placeholder="วาง Base64 หรือพิมพ์ข้อความ..."></textarea>
+                </div>
+
+                <!-- Section 2: Output -->
+                <div class="fixed-output-area gap-2">
+                    <div class="flex justify-between items-center">
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">ผลลัพธ์ (กดเพื่อคัดลอก):</p>
+                        <span id="charCountOutput" class="text-[10px] text-gray-500 font-mono">0 ตัว</span>
+                    </div>
+                    
+                    <!-- Text Result -->
+                    <div id="textResultBox" class="flex-grow overflow-hidden flex flex-col">
+                        <div id="universalOutput" onclick="copyContent('universalOutput')" 
+                            class="scrollable-box p-3 text-emerald-400 cursor-pointer hover:bg-gray-800/50 transition-all">
+                            กูรอมึงกรอกข้อมูลอยู่นะไอ้สัส
+                        </div>
+                    </div>
+
+                    <!-- Image Result -->
+                    <div id="imageResultBox" class="hidden flex-grow overflow-hidden bg-gray-900 rounded-lg border border-gray-700 p-2 text-center">
+                        <div class="image-preview-container h-full">
+                            <img id="decodedImgPreview" class="max-h-[70%] rounded shadow-lg mb-2" />
+                            <button id="downloadBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-4 rounded-md text-[10px] transition-all flex items-center gap-2 mx-auto">
+                                💾 บันทึกรูป
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: File Upload -->
+                <div class="flex gap-3 h-[15%] flex-shrink-0">
+                    <label class="flex-1 flex flex-col items-center justify-center border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800 transition-all">
+                        <p class="text-[10px] text-gray-400 font-semibold">📁 เลือกรูป</p>
+                        <input id="uploadFile" type="file" class="hidden" accept="image/*" />
+                    </label>
+
+                    <div id="fileInfo" class="hidden flex-[2] bg-gray-900 p-2 rounded-lg border border-gray-700 flex flex-col justify-center cursor-pointer hover:bg-gray-800 transition-all overflow-hidden" onclick="copyContent('fileBase64Output')">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-[9px] text-gray-500 uppercase">รหัสรูป (กดเพื่อคัดลอก):</p>
+                            <span id="charCountFile" class="text-[9px] text-gray-500 font-mono">0 ตัว</span>
+                        </div>
+                        <div id="fileBase64Output" class="text-[10px] text-emerald-500 font-mono truncate">...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="card-footer">
+                <div class="text-gray-600 text-[9px] leading-tight">
+                    TheMuiz Base64 | มะลิจัดให้
+                </div>
+                <div class="text-gray-500 text-[10px] font-bold">
+                    จัดทำโดย: กูเองแหละ!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-8 py-2 rounded-full shadow-2xl hidden z-50 text-sm font-bold pointer-events-none">
+        ก๊อปแล้ว ✅
+    </div>
+
+    <script>
+        const universalInput = document.getElementById('universalInput');
+        const universalOutput = document.getElementById('universalOutput');
+        const imageResultBox = document.getElementById('imageResultBox');
+        const textResultBox = document.getElementById('textResultBox');
+        const decodedImgPreview = document.getElementById('decodedImgPreview');
+        const charCountInput = document.getElementById('charCountInput');
+        const charCountOutput = document.getElementById('charCountOutput');
+        const charCountFile = document.getElementById('charCountFile');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        universalInput.addEventListener('input', () => {
+            const val = universalInput.value.trim();
+            charCountInput.innerText = `${universalInput.value.length} ตัว`;
+            
+            if (!val) { resetUniversal(); return; }
+            
+            if (val.startsWith('data:image/')) { 
+                showImageResult(val); 
+                charCountOutput.innerText = `${val.length} ตัว`;
+            } 
+            else if (isBase64(val)) {
+                const decodedText = decodeUTF8(val);
+                if (decodedText) { 
+                    showTextResult(decodedText); 
+                    charCountOutput.innerText = `${decodedText.length} ตัว`;
+                } 
+                else { 
+                    encodeNormalText(val); 
+                }
+            } 
+            else { 
+                encodeNormalText(val); 
+            }
+        });
+
+        function encodeNormalText(val) {
+            try {
+                const bytes = new TextEncoder().encode(val);
+                const binString = String.fromCodePoint(...bytes);
+                const result = btoa(binString);
+                showTextResult(result);
+                charCountOutput.innerText = `${result.length} ตัว`;
+            } catch (e) { 
+                showTextResult("รหัสพังว่ะ..."); 
+                charCountOutput.innerText = `0 ตัว`;
+            }
+        }
+
+        function showTextResult(text) {
+            universalOutput.innerText = text;
+            textResultBox.classList.remove('hidden');
+            imageResultBox.classList.add('hidden');
+        }
+
+        function showImageResult(base64) {
+            decodedImgPreview.src = base64;
+            imageResultBox.classList.remove('hidden');
+            textResultBox.classList.add('hidden');
+            downloadBtn.onclick = () => {
+                const link = document.createElement('a');
+                link.href = base64;
+                link.download = `muiz_img_${Date.now()}.png`;
+                link.click();
+            };
+        }
+
+        function resetUniversal() {
+            universalOutput.innerText = 'กูรอมึงกรอกข้อมูลอยู่นะไอ้สัส';
+            textResultBox.classList.remove('hidden');
+            imageResultBox.classList.add('hidden');
+            charCountInput.innerText = '0 ตัว';
+            charCountOutput.innerText = '0 ตัว';
+        }
+
+        const uploadFile = document.getElementById('uploadFile');
+        const fileBase64Output = document.getElementById('fileBase64Output');
+        const fileInfo = document.getElementById('fileInfo');
+
+        uploadFile.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    fileBase64Output.innerText = base64;
+                    charCountFile.innerText = `${base64.length} ตัว`;
+                    fileInfo.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function isBase64(str) {
+            if (str.length % 4 !== 0) return false;
+            const regex = /^[A-Za-z0-9+/]*={0,2}$/;
+            return regex.test(str);
+        }
+
+        function decodeUTF8(base64) {
+            try {
+                const binString = atob(base64);
+                const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
+                return new TextDecoder().decode(bytes);
+            } catch (e) { return null; }
+        }
+
+        function copyContent(id) {
+            const target = document.getElementById(id);
+            const content = target.innerText;
+            if (content === 'กูรอมึงกรอกข้อมูลอยู่นะไอ้สัส' || content === '...') return;
+            
+            const el = document.createElement('textarea');
+            el.value = content;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            const toast = document.getElementById('toast');
+            toast.classList.remove('hidden');
+            
+            const parent = target.closest('div[id$="Info"]') || target;
+            parent.classList.add('copy-active');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                parent.classList.remove('copy-active');
+            }, 800);
+        }
+
+        function clearAll() {
+            universalInput.value = '';
+            uploadFile.value = '';
+            fileInfo.classList.add('hidden');
+            charCountFile.innerText = '0 ตัว';
+            resetUniversal();
+        }
+    </script>
+</body>
+</html>
+
+
