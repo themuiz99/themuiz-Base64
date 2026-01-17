@@ -152,16 +152,18 @@
                         </div>
                     </div>
 
-                    <!-- Image Result -->
+                    <!-- Image/File Result -->
                     <div id="imageResultBox" class="hidden flex-grow overflow-hidden bg-gray-900 rounded-lg border border-gray-700 p-2 text-center">
                         <div class="image-preview-container h-full">
-                            <img id="decodedImgPreview" class="max-h-[70%] rounded shadow-lg mb-2" />
+                            <div id="filePreviewIcon" class="text-4xl mb-2 hidden">📄</div>
+                            <img id="decodedImgPreview" class="max-h-[70%] rounded shadow-lg mb-2 hidden" />
+                            <p id="fileNameDisplay" class="text-[10px] text-blue-300 mb-2"></p>
                             <div class="flex gap-2">
                                 <button id="downloadBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-4 rounded-md text-[10px] transition-all flex items-center gap-2">
-                                    🖼️ บันทึกรูป
+                                    💾 บันทึกไฟล์คืนค่า
                                 </button>
                                 <button id="saveTxtBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-4 rounded-md text-[10px] transition-all flex items-center gap-2">
-                                    💾 บันทึกรหัสเป็นไฟล์ .txt
+                                    📄 บันทึกรหัสเป็นไฟล์ .txt
                                 </button>
                             </div>
                         </div>
@@ -170,16 +172,16 @@
 
                 <!-- Section 3: File Upload Channels -->
                 <div class="flex gap-3 h-[15%] flex-shrink-0">
-                    <!-- Channel 1: Image to Base64 -->
+                    <!-- Channel 1: Universal File to Base64 -->
                     <label class="flex-1 flex flex-col items-center justify-center border-2 border-blue-600/50 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800 transition-all text-center p-1">
-                        <p class="text-[10px] text-blue-400 font-bold">🖼️ แปลงรูปเป็นรหัส</p>
-                        <p class="text-[8px] text-gray-500">(บันทึกเป็นไฟล์ .txt)</p>
-                        <input id="uploadImage" type="file" class="hidden" accept="image/*" />
+                        <p class="text-[10px] text-blue-400 font-bold">📁 แปลงไฟล์ทุกชนิดเป็นรหัส</p>
+                        <p class="text-[8px] text-gray-500">(รูป, เพลง, วิดีโอ, ฯลฯ)</p>
+                        <input id="uploadImage" type="file" class="hidden" accept="*/*" />
                     </label>
 
-                    <!-- Channel 2: Text/Txt to Image/Text -->
+                    <!-- Channel 2: Text/Txt to Media/Text -->
                     <label class="flex-1 flex flex-col items-center justify-center border-2 border-emerald-600/50 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800 transition-all text-center p-1">
-                        <p class="text-[10px] text-emerald-400 font-bold">📁 แปลงไฟล์ .txt คืนค่า</p>
+                        <p class="text-[10px] text-emerald-400 font-bold">📄 แปลงไฟล์ .txt คืนค่า</p>
                         <p class="text-[8px] text-gray-500">(ดึงรหัสจากไฟล์)</p>
                         <input id="uploadTxt" type="file" class="hidden" accept=".txt" />
                     </label>
@@ -192,7 +194,7 @@
                     TheMuiz Base64 | มะลิจัดให้
                 </div>
                 <div class="text-gray-500 text-[10px] font-bold">
-                    อัปเกรดระบบ Save ไฟล์ ป้องกันเครื่องค้าง!
+                    อัปเกรดระบบรองรับทุกไฟล์ (Universal Support)
                 </div>
             </div>
         </div>
@@ -209,6 +211,8 @@
         const imageResultBox = document.getElementById('imageResultBox');
         const textResultBox = document.getElementById('textResultBox');
         const decodedImgPreview = document.getElementById('decodedImgPreview');
+        const filePreviewIcon = document.getElementById('filePreviewIcon');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
         const charCountInput = document.getElementById('charCountInput');
         const charCountOutput = document.getElementById('charCountOutput');
         const downloadBtn = document.getElementById('downloadBtn');
@@ -216,9 +220,6 @@
         const uploadImage = document.getElementById('uploadImage');
         const uploadTxt = document.getElementById('uploadTxt');
 
-        let currentBase64 = "";
-
-        // ฟังก์ชันหลักในการจัดการ Input
         universalInput.addEventListener('input', () => {
             processInput(universalInput.value);
         });
@@ -229,25 +230,22 @@
             
             if (!val) { resetUniversal(); return; }
             
-            // ตรวจสอบว่าเป็น Image Base64 หรือไม่
-            if (val.startsWith('data:image/')) { 
-                currentBase64 = val;
-                showImageResult(val); 
+            // ตรวจสอบว่าเป็น Base64 ที่มี Header (Data URL) หรือไม่
+            if (val.startsWith('data:')) { 
+                showMediaResult(val); 
                 charCountOutput.innerText = `${val.length} ตัว`;
             } 
             else if (isBase64(val)) {
-                // พยายามถอดรหัสเป็นข้อความ
                 const decodedText = decodeUTF8(val);
-                if (decodedText) { 
+                if (decodedText && decodedText.length < 50000) { 
                     showTextResult(decodedText); 
                     charCountOutput.innerText = `${decodedText.length} ตัว`;
                 } else {
-                    // ถ้าถอดเป็นข้อความไม่ได้ อาจเป็นรหัสรูปที่ไม่มี header หรือไฟล์ไบนารี
-                    showTextResult("เป็นรหัส Base64 แต่ไม่ใช่ข้อความ (อาจเป็นไฟล์)");
+                    showTextResult(val); // ถ้าไม่ใช่ข้อความ ให้โชว์รหัสตัวมันเองเพื่อให้คัดลอกได้
+                    charCountOutput.innerText = `${val.length} ตัว`;
                 }
             } 
             else { 
-                // ถ้าไม่ใช่รหัส ก็ให้เข้ารหัสเป็น Base64
                 encodeNormalText(val); 
             }
         }
@@ -271,33 +269,40 @@
             imageResultBox.classList.add('hidden');
         }
 
-        function showImageResult(base64) {
-            decodedImgPreview.src = base64;
+        function showMediaResult(base64) {
             imageResultBox.classList.remove('hidden');
             textResultBox.classList.add('hidden');
             
-            // ปุ่มบันทึกรูปภาพ
+            const mime = base64.split(';')[0].split(':')[1] || 'application/octet-stream';
+            fileNameDisplay.innerText = `ชนิดไฟล์: ${mime}`;
+
+            if (mime.startsWith('image/')) {
+                decodedImgPreview.src = base64;
+                decodedImgPreview.classList.remove('hidden');
+                filePreviewIcon.classList.add('hidden');
+            } else {
+                decodedImgPreview.classList.add('hidden');
+                filePreviewIcon.classList.remove('hidden');
+                filePreviewIcon.innerText = mime.startsWith('audio/') ? '🎵' : (mime.startsWith('video/') ? '🎬' : '📄');
+            }
+            
             downloadBtn.onclick = () => {
                 const link = document.createElement('a');
                 link.href = base64;
-                link.download = `TheMuiz_Image_${Date.now()}.png`;
+                const ext = mime.split('/')[1] || 'bin';
+                link.download = `TheMuiz_Restore_${Date.now()}.${ext}`;
                 link.click();
             };
 
-            // ปุ่มบันทึกเป็น TXT (ที่ตะเองต้องการ)
             saveTxtBtn.onclick = () => {
-                saveAsTxt(base64);
+                const blob = new Blob([base64], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "TheMuiz_Base64_Code.txt";
+                link.click();
+                URL.revokeObjectURL(link.href);
+                showToast("บันทึกไฟล์ .txt สำเร็จ! 💾");
             };
-        }
-
-        function saveAsTxt(content) {
-            const blob = new Blob([content], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = "TheMuiz Base64.txt";
-            link.click();
-            URL.revokeObjectURL(link.href);
-            showToast("บันทึกไฟล์ .txt สำเร็จ! 💾");
         }
 
         function resetUniversal() {
@@ -306,46 +311,39 @@
             imageResultBox.classList.add('hidden');
             charCountInput.innerText = '0 ตัว';
             charCountOutput.innerText = '0 ตัว';
-            currentBase64 = "";
         }
 
-        // --- ส่วนการจัดการไฟล์ ---
-
-        // 1. อัปโหลดรูปเพื่อแปลงเป็น Base64
         uploadImage.addEventListener('change', function() {
             const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const base64 = e.target.result;
-                    universalInput.value = base64; // ใส่ในช่อง input
-                    processInput(base64); // ประมวลผล
+                    universalInput.value = base64;
+                    processInput(base64);
+                    showToast("แปลงไฟล์เป็นรหัสแล้ว! ✅");
                 }
                 reader.readAsDataURL(file);
             }
         });
 
-        // 2. อัปโหลดไฟล์ .txt เพื่อดึงรหัสกลับมา
         uploadTxt.addEventListener('change', function() {
             const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const content = e.target.result;
-                    universalInput.value = content; // วางรหัสที่ได้ลงในช่อง input
-                    processInput(content); // สั่งประมวลผลทันที
+                    universalInput.value = content;
+                    processInput(content);
+                    showToast("ดึงรหัสคืนค่าสำเร็จ! ✅");
                 }
                 reader.readAsText(file);
             }
         });
 
-        // --- ฟังก์ชันเสริมอื่นๆ ---
-
         function isBase64(str) {
             if (str.length % 4 !== 0) return false;
             const regex = /^[A-Za-z0-9+/]*={0,2}$/;
-            // ถ้าเป็น Image Base64 ให้ผ่านด้วย
-            if (str.startsWith('data:image/')) return true;
             return regex.test(str);
         }
 
@@ -388,4 +386,5 @@
     </script>
 </body>
 </html>
+
 
